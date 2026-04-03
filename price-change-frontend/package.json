@@ -1,0 +1,24 @@
+{
+  "name": "price-change-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.5",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.14.0",
+    "element-plus": "^2.13.6",
+    "jsencrypt": "^3.5.4",
+    "pinia": "^3.0.4",
+    "vue-router": "^4.6.4"
+  }
+}
