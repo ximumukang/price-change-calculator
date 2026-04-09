@@ -85,4 +85,38 @@ public class PriceItemService {
         wrapper.eq(PriceItem::getUserId, userId).eq(PriceItem::getId, id);
         priceItemMapper.delete(wrapper);
     }
+
+    /**
+     * 更新涨跌幅记录
+     * @param userId 当前用户 ID
+     * @param id 要更新的记录 ID
+     * @param name 新名称
+     * @param currentValue 新当前值
+     * @param targetValue 新目标值
+     * @return 更新后的记录
+     */
+    public PriceItem update(Long userId, Long id, String name, BigDecimal currentValue, BigDecimal targetValue) {
+        if (currentValue == null || currentValue.compareTo(BigDecimal.ZERO) == 0) {
+            throw new IllegalArgumentException("当前值必须大于0");
+        }
+
+        LambdaQueryWrapper<PriceItem> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(PriceItem::getUserId, userId).eq(PriceItem::getId, id);
+        PriceItem existing = priceItemMapper.selectOne(wrapper);
+        if (existing == null) {
+            throw new IllegalArgumentException("记录不存在");
+        }
+
+        existing.setName(name);
+        existing.setCurrentValue(currentValue);
+        existing.setTargetValue(targetValue);
+
+        BigDecimal changePercent = targetValue.subtract(currentValue)
+                .divide(currentValue, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+        existing.setChangePercent(changePercent);
+
+        priceItemMapper.updateById(existing);
+        return existing;
+    }
 }

@@ -7,6 +7,7 @@ import com.zang.pricechange.entity.PriceItem;
 import com.zang.pricechange.security.UserPrincipal;
 import com.zang.pricechange.service.PriceItemService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,13 +20,10 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/price-items")
+@RequiredArgsConstructor
 public class PriceItemController {
 
     private final PriceItemService priceItemService;
-
-    public PriceItemController(PriceItemService priceItemService) {
-        this.priceItemService = priceItemService;
-    }
 
     /**
      * 新增涨跌幅记录
@@ -63,6 +61,24 @@ public class PriceItemController {
             @PathVariable Long id) {
         priceItemService.delete(principal.getUserId(), id);
         return Result.success();
+    }
+
+    /**
+     * 更新涨跌幅记录
+     */
+    @PutMapping("/{id}")
+    public Result<PriceItemResponse> update(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @Valid @RequestBody PriceItemRequest request) {
+        PriceItem item = priceItemService.update(
+                principal.getUserId(),
+                id,
+                request.getName(),
+                request.getCurrentValue(),
+                request.getTargetValue()
+        );
+        return Result.success(toResponse(item));
     }
 
     private PriceItemResponse toResponse(PriceItem item) {

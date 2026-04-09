@@ -1,28 +1,60 @@
+# Spring Boot 应用配置文件
+
+# Spring 相关配置
 spring:
+  # 数据源配置（MySQL）
   datasource:
+    # JDBC 连接 URL：
+    # - useUnicode=true&characterEncoding=utf-8: 使用 UTF-8 编码
+    # - serverTimezone=Asia/Shanghai: 设置时区为上海时间
+    # - allowPublicKeyRetrieval=true: 允许公钥检索（MySQL 8.0+）
+    # - useSSL=false: 不使用 SSL 加密
     url: jdbc:mysql://localhost:3306/price_change?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    # 数据库驱动类名
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 数据库用户名
     username: root
+    # 数据库密码
     password: root
+  # SQL 初始化配置
   sql:
     init:
+      # 初始化模式：never 表示不自动执行 schema.sql 和 data.sql
       mode: never
 
+# MyBatis-Plus 配置
 mybatis-plus:
+  # MyBatis 原生配置
   configuration:
+    # 开启下划线转驼峰映射：数据库字段 user_name -> Java 属性 userName
     map-underscore-to-camel-case: true
+    # 开启 SQL 日志输出到控制台，便于调试
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  # 全局配置
   global-config:
+    # 数据库相关配置
     db-config:
+      # 主键策略：自增（AUTO）
       id-type: auto
 
+# 服务器配置
 server:
+  # 应用端口：8080
   port: 8080
 
+# JWT Token 配置
 jwt:
+  # JWT 签名密钥（用于生成和验证 Token）
+  # 注意：生产环境应使用更安全的随机密钥，并存储在环境变量中
   secret: price-change-secret-key-for-jwt-token-generation-must-be-at-least-256-bits
+  # Token 过期时间（毫秒）：7200000ms = 2 小时
   expiration: 7200000
 
+# 应用自定义配置
 app:
+  # CORS（跨域资源共享）配置
   cors:
+    # 允许的源地址（前端地址）
+    # - http://localhost:5173: Vite 开发服务器默认端口
+    # - http://localhost:3000: 其他可能的前端端口
     allowed-origins: http://localhost:5173,http://localhost:3000

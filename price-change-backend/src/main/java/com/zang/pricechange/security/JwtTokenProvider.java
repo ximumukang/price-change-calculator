@@ -5,8 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -18,10 +17,9 @@ import java.util.Date;
  * JWT Token 工具类
  * 负责生成、解析和验证 JWT Token
  */
+@Slf4j
 @Component
 public class JwtTokenProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     @Value("${jwt.secret:price-change-secret-key-for-jwt-token-generation-must-be-at-least-256-bits}")
     private String secretString;

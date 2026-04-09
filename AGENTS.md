@@ -246,7 +246,7 @@ public class PriceItemService {
 #### 安全规范
 
 - 密码使用 BCrypt 加密存储 (`BCryptPasswordEncoder`)
-- 传输使用 RSA-2048 + OAEP 填充加密 (`RSA/ECB/OAEPWithSHA-256AndMGF1Padding`)
+- 传输使用 RSA-2048 + PKCS1Padding 填充加密 (`RSA/ECB/PKCS1Padding`)
 - 使用 JWT Token 认证，过期时间默认 2 小时
 - JWT 过滤器需检查 `SecurityContext` 是否已有认证信息，避免重复处理
 
@@ -411,7 +411,7 @@ app:
 3. **Lombok**: `@Data` 注解的 DTO 必须添加 `@NoArgsConstructor` 和 `@AllArgsConstructor`
 4. **Spring Security**: 公开接口需在 `SecurityConfig` 中配置 `.permitAll()`
 5. **除零风险**: 涨跌幅计算前必须校验 `currentValue > 0`
-6. **RSA 加密**: 使用 OAEP 填充模式 (`RSA/ECB/OAEPWithSHA-256AndMGF1Padding`)，前后端需一致
+6. **RSA 加密**: 使用 PKCS1Padding 填充模式 (`RSA/ECB/PKCS1Padding`)，前后端需一致（前端 jsencrypt 仅支持 PKCS1Padding）
 7. **JWT 解析**: 提取公共 `parseClaims()` 方法，避免重复代码
 8. **CORS 配置**: 允许域名通过 `app.cors.allowed-origins` 配置，不要硬编码
 

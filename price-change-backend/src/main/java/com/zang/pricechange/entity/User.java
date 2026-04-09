@@ -13,21 +13,36 @@ import java.time.LocalDateTime;
 
 /**
  * 用户实体类 - 对应 users 表
+ * 用于存储用户基本信息，包括用户名、密码哈希和创建时间
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("users")
 public class User {
+    /**
+     * 用户ID，主键，自增
+     */
     @TableId(type = IdType.AUTO)
     private Long id;
     
+    /**
+     * 用户名，唯一标识用户
+     */
     @TableField("username")
     private String username;
     
+    /**
+     * 密码哈希值，使用BCrypt算法加密存储
+     * 不直接存储明文密码，保证安全性
+     */
     @TableField("password_hash")
     private String passwordHash;
     
+    /**
+     * 创建时间，插入记录时自动填充当前时间
+     * 由MyBatis-Plus的自动填充功能管理
+     */
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 }

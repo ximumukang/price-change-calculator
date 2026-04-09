@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zang.pricechange.entity.User;
 import com.zang.pricechange.mapper.UserMapper;
 import com.zang.pricechange.security.RsaUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -12,17 +13,12 @@ import org.springframework.stereotype.Service;
  * 处理用户相关的业务逻辑：注册、登录、获取公钥
  */
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final RsaUtils rsaUtils;
-
-    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder, RsaUtils rsaUtils) {
-        this.userMapper = userMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.rsaUtils = rsaUtils;
-    }
 
     /**
      * 获取 RSA 公钥

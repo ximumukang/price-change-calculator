@@ -26,3 +26,7 @@ export const createPriceItem = (data: PriceItemRequest) => {
 export const deletePriceItem = (id: number) => {
   return request.delete<never, void>(`/price-items/${id}`)
 }
+
+export const updatePriceItem = (id: number, data: PriceItemRequest) => {
+  return request.put<never, PriceItem>(`/price-items/${id}`, data)
+}

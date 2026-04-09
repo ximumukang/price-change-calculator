@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getPriceItems, createPriceItem, deletePriceItem, type PriceItem } from '../api/priceItem'
+import { getPriceItems, createPriceItem, deletePriceItem, updatePriceItem, type PriceItem } from '../api/priceItem'
 import { useAuthStore } from '../store/auth'
 
 const authStore = useAuthStore()
@@ -10,6 +10,8 @@ const items = ref<PriceItem[]>([])
 const sortOrder = ref('desc')
 const loading = ref(false)
 const dialogVisible = ref(false)
+const isEdit = ref(false)
+const editingId = ref<number | null>(null)
 const form = ref({
   name: '',
   currentValue: 0,
@@ -38,18 +40,52 @@ const handleAdd = async () => {
     return
   }
   try {
-    await createPriceItem({
-      name: form.value.name,
-      currentValue: form.value.currentValue,
-      targetValue: form.value.targetValue
-    })
-    ElMessage.success('添加成功')
+    if (isEdit.value && editingId.value !== null) {
+      await updatePriceItem(editingId.value, {
+        name: form.value.name,
+        currentValue: form.value.currentValue,
+        targetValue: form.value.targetValue
+      })
+      ElMessage.success('更新成功')
+    } else {
+      await createPriceItem({
+        name: form.value.name,
+        currentValue: form.value.currentValue,
+        targetValue: form.value.targetValue
+      })
+      ElMessage.success('添加成功')
+    }
     dialogVisible.value = false
     form.value = { name: '', currentValue: 0, targetValue: 0 }
+    isEdit.value = false
+    editingId.value = null
     await loadItems()
   } catch (e: any) {
-    ElMessage.error('添加失败')
+    ElMessage.error(isEdit.value ? '更新失败' : '添加失败')
   }
+}
+
+const openDialog = (row?: PriceItem) => {
+  if (row) {
+    isEdit.value = true
+    editingId.value = row.id
+    form.value = {
+      name: row.name,
+      currentValue: row.currentValue,
+      targetValue: row.targetValue
+    }
+  } else {
+    isEdit.value = false
+    editingId.value = null
+    form.value = { name: '', currentValue: 0, targetValue: 0 }
+  }
+  dialogVisible.value = true
+}
+
+const handleCloseDialog = () => {
+  isEdit.value = false
+  editingId.value = null
+  form.value = { name: '', currentValue: 0, targetValue: 0 }
 }
 
 const handleDelete = async (id: number) => {
@@ -104,7 +140,7 @@ onMounted(() => {
       </el-header>
       <el-main>
         <div class="toolbar">
-          <el-button type="primary" @click="dialogVisible = true">新增</el-button>
+          <el-button type="primary" @click="openDialog()">新增</el-button>
           <div class="sort-buttons">
             <el-button :type="sortOrder === 'asc' ? 'success' : 'default'" @click="handleSort('asc')">
               升序
@@ -139,8 +175,11 @@ onMounted(() => {
               {{ new Date(row.createdAt).toLocaleString() }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="100">
+          <el-table-column label="操作" width="150">
             <template #default="{ row }">
+              <el-button type="primary" size="small" @click="openDialog(row)">
+                编辑
+              </el-button>
               <el-button type="danger" size="small" @click="handleDelete(row.id)">
                 删除
               </el-button>
@@ -150,7 +189,7 @@ onMounted(() => {
       </el-main>
     </el-container>
 
-    <el-dialog v-model="dialogVisible" title="新增涨跌幅记录" width="400px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑涨跌幅记录' : '新增涨跌幅记录'" width="400px" @close="handleCloseDialog">
       <el-form :model="form" label-width="80px">
         <el-form-item label="名称">
           <el-input v-model="form.name" placeholder="请输入名称" />
@@ -164,7 +203,7 @@ onMounted(() => {
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAdd">确定</el-button>
+        <el-button type="primary" @click="handleAdd">{{ isEdit ? '更新' : '确定' }}</el-button>
       </template>
     </el-dialog>
   </div>

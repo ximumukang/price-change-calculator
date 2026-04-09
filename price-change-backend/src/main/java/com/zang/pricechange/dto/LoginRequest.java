@@ -4,9 +4,9 @@ package com.zang.pricechange.dto;
 // 参数校验注解
 import jakarta.validation.constraints.NotBlank;
 // Lombok 注解
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 /**
  * 登录请求 DTO
