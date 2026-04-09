@@ -60,6 +60,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 允许所有用户访问认证相关接口（登录、注册、获取公钥等）
                         .requestMatchers("/api/auth/**").permitAll()
+                        // 允许访问 Swagger UI 和 API 文档
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         // 其他所有请求都需要认证
                         .anyRequest().authenticated()
                 )
