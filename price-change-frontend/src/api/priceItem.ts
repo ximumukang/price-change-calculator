@@ -1,4 +1,4 @@
-import request from '../utils/request'
+import { get, post, put, delete_ } from '../utils/request'
 
 export interface PriceItem {
   id: number
@@ -16,17 +16,17 @@ export interface PriceItemRequest {
 }
 
 export const getPriceItems = (sortOrder: string = 'desc') => {
-  return request.get<never, PriceItem[]>('/price-items', { params: { sortOrder } })
+  return get<PriceItem[]>('/price-items', { params: { sortOrder } })
 }
 
 export const createPriceItem = (data: PriceItemRequest) => {
-  return request.post<never, PriceItem>('/price-items', data)
+  return post<PriceItem>('/price-items', data)
 }
 
 export const deletePriceItem = (id: number) => {
-  return request.delete<never, void>(`/price-items/${id}`)
+  return delete_<void>(`/price-items/${id}`)
 }
 
 export const updatePriceItem = (id: number, data: PriceItemRequest) => {
-  return request.put<never, PriceItem>(`/price-items/${id}`, data)
+  return put<PriceItem>(`/price-items/${id}`, data)
 }
