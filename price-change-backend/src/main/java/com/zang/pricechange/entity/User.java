@@ -21,10 +21,10 @@ import java.time.LocalDateTime;
 @TableName("users")
 public class User {
     /**
-     * 用户ID，主键，自增
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+     * 用户ID，主键，雪花算法生成
+      */
+     @TableId(type = IdType.ASSIGN_ID)
+     private Long id;
     
     /**
      * 用户名，唯一标识用户

@@ -6,6 +6,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -25,6 +28,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor  // Lombok：生成包含所有字段的构造方法
 public class PriceItemResponse {
     // 记录 ID
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
     // 名称（如"股票A"、"比特币"）
     private String name;
