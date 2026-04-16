@@ -1,5 +1,6 @@
 $BACKEND_DIR = "D:\zang\price-change-backend"
 $MYSQL_CONTAINER = "mysql-local"
+$ENV_FILE = "D:\zang\.env"
 
 Write-Host "[1/3] Check MySQL container..."
 $running = docker ps --filter "name=$MYSQL_CONTAINER" --format "{{.Names}}" 2>$null
@@ -26,6 +27,26 @@ for ($i = 0; $i -lt 30; $i++) {
     Start-Sleep -Seconds 2
 }
 
-Write-Host "[3/3] Start backend..."
+Write-Host "[3/3] Load environment variables..."
+if (Test-Path $ENV_FILE) {
+    $lines = Get-Content $ENV_FILE -Encoding UTF8
+    foreach ($line in $lines) {
+        if ($line -and $line.Trim() -ne "" -and $line -notmatch "^#") {
+            $eqPos = $line.IndexOf("=")
+            if ($eqPos -gt 0) {
+                $key = $line.Substring(0, $eqPos).Trim()
+                $value = $line.Substring($eqPos + 1).Trim()
+                if ($key -and $value) {
+                    [System.Environment]::SetEnvironmentVariable($key, $value, [System.EnvironmentVariableTarget]::Process)
+                }
+            }
+        }
+    }
+    Write-Host "  Environment loaded" -ForegroundColor Green
+} else {
+    Write-Host "  Warning: .env file not found" -ForegroundColor Yellow
+}
+
+Write-Host "[4/4] Start backend..."
 Set-Location $BACKEND_DIR
 mvn spring-boot:run
