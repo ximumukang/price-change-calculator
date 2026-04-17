@@ -35,8 +35,8 @@ mybatis-plus:
   global-config:
     # 数据库相关配置
     db-config:
-      # 主键策略：自增（AUTO）
-      id-type: auto
+      # 主键策略：雪花算法（ASSIGN_ID）
+      id-type: assign_id
   # TypeHandler 包扫描路径（已禁用，避免全局加密影响用户名字段）
   # type-handlers-package: com.zang.pricechange.security
 
