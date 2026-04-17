@@ -37,10 +37,16 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Security 安全框架：提供认证和授权功能 -->
+        <!-- Spring Security 安全框架:提供认证和授权功能 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot AOP 起步依赖:支持 @Aspect、@Around 等切面编程 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
         <!-- Spring Boot 参数验证依赖：支持 @Validated、@NotBlank 等注解 -->
@@ -108,6 +114,20 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.5.0</version>
         </dependency>
+
+        <!-- Bucket4j: 请求速率限制 -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.7.0</version>
+        </dependency>
+
+        <!-- OWASP Java Encoder: 防止 XSS 攻击的输入清理 -->
+        <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+            <version>1.2.3</version>
+        </dependency>
     </dependencies>
 
     <!-- 构建配置 -->
@@ -128,23 +148,34 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <!-- OWASP Dependency Check: 依赖漏洞扫描插件 -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.9</version>
                 <configuration>
-                    <environmentVariables>
-                        <DB_HOST>localhost</DB_HOST>
-                        <DB_PORT>3306</DB_PORT>
-                        <DB_NAME>price_change</DB_NAME>
-                        <DB_USERNAME>root</DB_USERNAME>
-                        <DB_PASSWORD>root</DB_PASSWORD>
-                        <DB_USE_SSL>false</DB_USE_SSL>
-                        <JWT_SECRET>yEAR0Imys+xNyJs//+jOS+jBVvDg+p+DTXRyvKIUwnE=</JWT_SECRET>
-                        <RSA_PRIVATE_KEY>MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCnVQc6sqRdn8TLtSiR3gx2NtM3prJ3TAnmnGDpix0FeM7+nYbzZgqv14u5Jcpi7L3WxvMnwoVOAlErR5C1BpQYLpOh4svIgJefqnmMnecl3qodegEhYzOi5rJEwBTZPF4l2jx5nqOwRaLnKxEbTHxQjhwRL2KdQMvqCdysF0YXPs0VQ8q9wn28eBpnbSF9XupGAF4ZnBLIEDSMtsAYjlUOqBVZWSahp73amfSezxdLRTCgVzg2bNiRS7ZZ7VSVWRaKm0541zJgUewCn5nd7HJ8Kfm4ISp2jXd2+2yCOvZmzLMOWOpOjMRf6NrtYGYDui5qvGq4gvR8Q5zBwgyq4697AgMBAAECggEAL7MjXm4yQKYcuV0o9Xvw3Xn/d+vDEBLS97Q4RBrt6PNpPle1cojyHvI42EyXht+ptiH8iqb+zSAH92htLc10RfhxCULXiI5vqoo0IAubKsZwg/qVe+kFfTh6NPL0foCg7fVqK9k3HDadm3xBYiDJh0UbZyK039LqzgqFp2DzEAjWn9Y7AFcNNHSsKmuSFROGzFKKsgZI4TZZloV8r+RUVy/NVAGCslCb/YADj8OYvIu2yIN18CAyFnzggqLlPFicgTX+mB49n1Tr0oETM/vabf3gK0e5PAfnYDxy4o+jSv5ZUpxnCwiHCV6XPNbooo9Mqxe6/lXs9+IFvmtZMQPbEQKBgQDfh2CWJcrjGmxAk5Weyvo0T0nLY9vcZbsfhMKG07RyAos7WF1q+HI3/X/NJ1dkfjo0wK5fj99Dd8FKAO7P/Zsv8RY85pApuh3LiWQfywjtzXZD4FEaJDE64r+PYTV7JtGBMU7ZW2NlWGncowDfG0VVCd5SogwyzvtNe1/YV5SilwKBgQC/o8z3t4nLUBqWOqxIx2tRP59RnOFOex40Shj1a4jYEGnbBT9HhDhse/KXuZUgLTRgUFKQ2jYue2wEKA4dHiutg+q/bxOfopQdTWXSvsrf5FTbEm+PWifKISF72d48635GDG2cGR/4UBKKCrT1eKsDmxKTVPbqtNU8mvidOxhKvQKBgELGdGomXBe/+vrHm/jV9izOSuNBr5qFoYLm7B3O/Kbab7GI0k90bNqhFh65U/gnZUgBD5Zoqm/DRLDQ2oaz4jpOMTB8SDDO8rutDYYZ507zBBN+3XuLuFE5D7TLe2iQziFkE4QHMwhBg05wO4Bq6yleS1YwJqi/AH/DDXzZnQN9AoGBAK0oA/uQCyF5r4wuV50rEvzGz92eMrYG6LO2f/bAw1T2/662fwbPoWvkUr5lISmBruGXsgLQKES3oFHhH1+P80dE+sceRkznSY1wcaCKZCUI2uNXNRYCEBHC/c46fWPuJJqGgEObMBfdweKY6gkijuMjKxWUn8ZSvpmULS9kRf7BAoGBAKsGq0t2chnPR2PLgjPm6314uhuY6HOWTFnAE2LpRoNpS0fVjK21KFw61TLfT0rt8mf8FZrO97tjfYVbGTyXh8ZUePFp0e9mwa5mr424OnuCcoH3LXLfGuxXpbj1sN+jqz0UVjua/sC6SCFsmP6eLMPyIJum1HmJCf+WR27RbLTk</RSA_PRIVATE_KEY>
-                        <RSA_PUBLIC_KEY>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp1UHOrKkXZ/Ey7Uokd4MdjbTN6ayd0wJ5pxg6YsdBXjO/p2G82YKr9eLuSXKYuy91sbzJ8KFTgJRK0eQtQaUGC6ToeLLyICXn6p5jJ3nJd6qHXoBIWMzouayRMAU2TxeJdo8eZ6jsEWi5ysRG0x8UI4cES9inUDL6gncrBdGFz7NFUPKvcJ9vHgaZ20hfV7qRgBeGZwSyBA0jLbAGI5VDqgVWVkmoae92pn0ns8XS0UwoFc4NmzYkUu2We1UlVkWiptOeNcyYFHsAp+Z3exyfCn5uCEqdo13dvtsgjr2ZsyzDljqTozEX+ja7WBmA7ouarxquIL0fEOcwcIMquOvewIDAQAB</RSA_PUBLIC_KEY>
-                        <CORS_ALLOWED_ORIGINS>http://localhost:5173,http://localhost:3000</CORS_ALLOWED_ORIGINS>
-                    </environmentVariables>
+                    <!-- 扫描失败阈值：HIGH 及以上严重程度的漏洞会导致构建失败 -->
+                    <failBuildOnCVSS>7</failBuildOnCVSS>
+                    <!-- 输出格式：HTML + JSON -->
+                    <formats>
+                        <format>HTML</format>
+                        <format>JSON</format>
+                    </formats>
+                    <!-- 抑制文件路径（可选，用于忽略已知但接受的漏洞） -->
+                    <!-- <suppressionFiles>
+                        <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+                    </suppressionFiles> -->
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <!-- 绑定到 verify 阶段，运行 mvn verify 时自动执行 -->
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

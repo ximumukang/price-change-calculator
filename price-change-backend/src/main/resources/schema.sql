@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS price_item (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
-  name VARCHAR(100) NOT NULL,
+  name VARCHAR(500) NOT NULL COMMENT '价格项名称（AES-256-GCM加密存储）',
   current_value DECIMAL(18,4) NOT NULL,
   target_value DECIMAL(18,4) NOT NULL,
   change_percent DECIMAL(10,4),

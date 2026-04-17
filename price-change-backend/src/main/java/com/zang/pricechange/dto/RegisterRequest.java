@@ -19,13 +19,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor  // Lombok：生成无参构造方法
 @AllArgsConstructor  // Lombok：生成包含所有字段的构造方法
 public class RegisterRequest {
-    // 加密后的用户名
+    // 加密后的用户名（RSA 加密后为 Base64 字符串，长度约 300+ 字符）
     @NotBlank(message = "用户名不能为空")  // 校验：不能为空
-    @Size(min = 3, max = 500, message = "用户名长度3-500字符")  // 校验：长度限制
     private String username;
 
-    // 加密后的密码
+    // 加密后的密码（RSA 加密后为 Base64 字符串，长度约 300+ 字符）
     @NotBlank(message = "密码不能为空")  // 校验：不能为空
-    @Size(min = 6, max = 500, message = "密码长度6-500字符")  // 校验：长度限制（至少6位）
     private String password;
 }

@@ -12,15 +12,18 @@ const username = ref('')
 const password = ref('')
 const loading = ref(false)
 
+// 组件挂载时获取 RSA 公钥
 onMounted(async () => {
   try {
     await getPublicKey()
-  } catch (e) {
+  } catch (e: any) {
+    console.error('[Login] Failed to get public key:', e)
     ElMessage.error('获取公钥失败，请检查后端服务是否启动')
   }
 })
 
 const handleLogin = async () => {
+  // 前端基础验证
   if (!username.value || !password.value) {
     ElMessage.warning('请输入用户名和密码')
     return
@@ -28,13 +31,21 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
+    // 调用登录接口（用户名和密码会自动 RSA 加密）
     const res = await login(username.value, password.value)
+    
+    // 保存认证信息到 store 和 localStorage
     authStore.setToken(res.token)
+    authStore.setRefreshToken(res.refreshToken)
     authStore.setUsername(res.username)
+    
     ElMessage.success('登录成功')
     router.push('/')
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.message || '登录失败')
+    console.error('[Login] Login error:', e)
+    // 优先显示后端返回的错误信息
+    const errorMsg = e.response?.data?.message || e.message || '登录失败'
+    ElMessage.error(errorMsg)
   } finally {
     loading.value = false
   }

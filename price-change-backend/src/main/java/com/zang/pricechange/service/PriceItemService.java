@@ -3,6 +3,8 @@ package com.zang.pricechange.service;
 
 // MyBatis-Plus 查询条件构造器
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+// 输入清理工具类
+import com.zang.pricechange.common.InputSanitizer;
 // 价格项实体类
 import com.zang.pricechange.entity.PriceItem;
 // 价格项 Mapper 接口
@@ -30,21 +32,31 @@ public class PriceItemService {
      * 创建涨跌幅记录
      * @param userId 当前用户 ID
      * @param name 名称
-     * @param currentValue 当前值
-     * @param targetValue 目标值
+     * @param currentValue 当前值（必须大于0，用于计算涨跌幅的分母）
+     * @param targetValue 目标值（可以为负数，表示预期下跌）
      * @return 创建好的记录
      */
     public PriceItem create(Long userId, String name, BigDecimal currentValue, BigDecimal targetValue) {
+        // 参数校验：当前值必须大于0（防止除零错误）
         if (currentValue == null || currentValue.compareTo(BigDecimal.ZERO) == 0) {
             throw new IllegalArgumentException("当前值必须大于0");
         }
+        
+        // 参数校验：名称不能为空
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("名称不能为空");
+        }
+
+        // 对名称进行 HTML 转义（加密由 EncryptedStringTypeHandler 自动处理）
+        String sanitizedName = InputSanitizer.sanitizeForHtml(name);
 
         PriceItem item = new PriceItem();
         item.setUserId(userId);
-        item.setName(name);
+        item.setName(sanitizedName);
         item.setCurrentValue(currentValue);
         item.setTargetValue(targetValue);
         
+        // 计算涨跌幅：(目标值 - 当前值) / 当前值 * 100%
         BigDecimal changePercent = targetValue.subtract(currentValue)
                 .divide(currentValue, 4, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
@@ -83,7 +95,11 @@ public class PriceItemService {
     public void delete(Long userId, Long id) {
         LambdaQueryWrapper<PriceItem> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(PriceItem::getUserId, userId).eq(PriceItem::getId, id);
-        priceItemMapper.delete(wrapper);
+        int deleted = priceItemMapper.delete(wrapper);
+        
+        if (deleted == 0) {
+            throw new IllegalArgumentException("记录不存在或无权删除");
+        }
     }
 
     /**
@@ -91,26 +107,35 @@ public class PriceItemService {
      * @param userId 当前用户 ID
      * @param id 要更新的记录 ID
      * @param name 新名称
-     * @param currentValue 新当前值
+     * @param currentValue 新当前值（必须大于0）
      * @param targetValue 新目标值
      * @return 更新后的记录
      */
     public PriceItem update(Long userId, Long id, String name, BigDecimal currentValue, BigDecimal targetValue) {
+        // 参数校验：当前值必须大于0（防止除零错误）
         if (currentValue == null || currentValue.compareTo(BigDecimal.ZERO) == 0) {
             throw new IllegalArgumentException("当前值必须大于0");
+        }
+        
+        // 参数校验：名称不能为空
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("名称不能为空");
         }
 
         LambdaQueryWrapper<PriceItem> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(PriceItem::getUserId, userId).eq(PriceItem::getId, id);
         PriceItem existing = priceItemMapper.selectOne(wrapper);
         if (existing == null) {
-            throw new IllegalArgumentException("记录不存在");
+            throw new IllegalArgumentException("记录不存在或无权修改");
         }
 
-        existing.setName(name);
+        // 对名称进行 HTML 转义（加密由 EncryptedStringTypeHandler 自动处理）
+        String sanitizedName = InputSanitizer.sanitizeForHtml(name);
+        existing.setName(sanitizedName);
         existing.setCurrentValue(currentValue);
         existing.setTargetValue(targetValue);
 
+        // 重新计算涨跌幅
         BigDecimal changePercent = targetValue.subtract(currentValue)
                 .divide(currentValue, 4, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));

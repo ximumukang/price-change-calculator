@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * JWT Token 工具类
@@ -40,6 +41,15 @@ public class JwtTokenProvider {
     private long expiration;
 
     /**
+     * Refresh Token 过期时间（毫秒）
+     * <p>
+     * 默认值：604800000 毫秒 = 7 天
+     * 可通过配置文件 jwt.refresh-expiration 自定义
+     */
+    @Value("${jwt.refresh-expiration:604800000}")
+    private long refreshExpiration;
+
+    /**
      * 获取签名密钥
      * <p>
      * 将字符串密钥转换为 HMAC-SHA 算法所需的 SecretKey 对象
@@ -64,12 +74,45 @@ public class JwtTokenProvider {
      * @return 生成的 JWT Token 字符串
      */
     public String generateToken(String username, Long userId) {
+        return generateToken(username, userId, expiration);
+    }
+
+    /**
+     * 生成 Refresh Token
+     * <p>
+     * 与 Access Token 类似，但过期时间更长
+     *
+     * @param username 用户名
+     * @param userId   用户 ID
+     * @return 生成的 Refresh Token 字符串
+     */
+    public String generateRefreshToken(String username, Long userId) {
+        return generateToken(username, userId, refreshExpiration);
+    }
+
+    /**
+     * 生成 JWT Token（内部方法）
+     * 
+     * 安全特性：
+     * - 添加 jti (JWT ID) 唯一标识符，防止会话固定攻击
+     * - 每次登录生成新的 Token ID
+     *
+     * @param username   用户名
+     * @param userId     用户 ID
+     * @param expiration 过期时间（毫秒）
+     * @return 生成的 JWT Token 字符串
+     */
+    private String generateToken(String username, Long userId, long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
+        
+        // 生成唯一的 JWT ID，防止会话固定攻击
+        String jti = UUID.randomUUID().toString();
 
         return Jwts.builder()
                 .subject(username)                    // 设置主题（用户名）
                 .claim("userId", userId)              // 添加自定义声明（用户 ID）
+                .id(jti)                              // 添加唯一标识符（防会话固定）
                 .issuedAt(now)                        // 设置签发时间
                 .expiration(expiryDate)               // 设置过期时间
                 .signWith(getSigningKey())            // 使用密钥签名
@@ -94,6 +137,17 @@ public class JwtTokenProvider {
      */
     public Long getUserIdFromToken(String token) {
         return parseClaims(token).get("userId", Long.class);
+    }
+
+    /**
+     * 从 Token 中获取 JWT ID (jti)
+     * 用于防止会话固定攻击和 Token 黑名单管理
+     *
+     * @param token JWT Token 字符串
+     * @return JWT 唯一标识符
+     */
+    public String getJtiFromToken(String token) {
+        return parseClaims(token).getId();
     }
 
     /**

@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.apache.ibatis.type.StringTypeHandler;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +19,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("users")
+@TableName(value = "users", autoResultMap = true)
 public class User {
     /**
      * 用户ID，主键，雪花算法生成
@@ -28,15 +29,17 @@ public class User {
     
     /**
      * 用户名，唯一标识用户
+     * 明确指定使用 StringTypeHandler，避免被 EncryptedStringTypeHandler 加密
      */
-    @TableField("username")
+    @TableField(value = "username", typeHandler = StringTypeHandler.class)
     private String username;
     
     /**
      * 密码哈希值，使用BCrypt算法加密存储
      * 不直接存储明文密码，保证安全性
+     * 明确指定使用 StringTypeHandler，避免被 EncryptedStringTypeHandler 加密
      */
-    @TableField("password_hash")
+    @TableField(value = "password_hash", typeHandler = StringTypeHandler.class)
     private String passwordHash;
     
     /**

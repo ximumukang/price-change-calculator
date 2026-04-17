@@ -2,20 +2,21 @@
 
 # Spring 相关配置
 spring:
-  # 数据源配置（MySQL）
+  # 数据源配置(MySQL)
   datasource:
-    # JDBC 连接 URL：
+    # JDBC 连接 URL:
     # - useUnicode=true&characterEncoding=utf-8: 使用 UTF-8 编码
     # - serverTimezone=Asia/Shanghai: 设置时区为上海时间
-    # - allowPublicKeyRetrieval=true: 允许公钥检索（MySQL 8.0+）
-    # - useSSL=false: 不使用 SSL 加密
-    url: jdbc:mysql://localhost:3306/price_change?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    # - allowPublicKeyRetrieval=true: 允许公钥检索(MySQL 8.0+)
+    # - useSSL: 生产环境应设为 true 并配置证书验证
+    # 开发环境可通过 DB_USE_SSL=false 禁用 SSL
+    url: jdbc:mysql://localhost:3306/price_change?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=${DB_USE_SSL:false}&requireSSL=${DB_REQUIRE_SSL:false}&verifyServerCertificate=${DB_VERIFY_SSL:false}
     # 数据库驱动类名
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # 数据库用户名
-    username: root
-    # 数据库密码
-    password: root
+    # 数据库用户名(从环境变量读取)
+    username: ${DB_USERNAME}
+    # 数据库密码(从环境变量读取)
+    password: ${DB_PASSWORD}
   # SQL 初始化配置
   sql:
     init:
@@ -36,6 +37,8 @@ mybatis-plus:
     db-config:
       # 主键策略：自增（AUTO）
       id-type: auto
+  # TypeHandler 包扫描路径（已禁用，避免全局加密影响用户名字段）
+  # type-handlers-package: com.zang.pricechange.security
 
 # 服务器配置
 server:
@@ -44,11 +47,13 @@ server:
 
 # JWT Token 配置
 jwt:
-  # JWT 签名密钥（用于生成和验证 Token）
-  # 注意：生产环境应使用更安全的随机密钥，并存储在环境变量中
-  secret: price-change-secret-key-for-jwt-token-generation-must-be-at-least-256-bits
-  # Token 过期时间（毫秒）：7200000ms = 2 小时
-  expiration: 7200000
+  # JWT 签名密钥(用于生成和验证 Token)
+  # 从环境变量读取,生产环境必须设置此变量(至少 256 位)
+  secret: ${JWT_SECRET}
+  # Access Token 过期时间(毫秒): 默认 15 分钟
+  expiration: ${JWT_EXPIRATION:900000}
+  # Refresh Token 过期时间(毫秒): 默认 7 天
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 # 应用自定义配置
 app:
@@ -58,8 +63,26 @@ app:
     # - http://localhost:5173: Vite 开发服务器默认端口
     # - http://localhost:3000: 其他可能的前端端口
     allowed-origins: http://localhost:5173,http://localhost:3000
-  # RSA 密钥对配置（Base64 编码，PKCS#8 私钥 / X.509 公钥）
-  # 注意：生产环境应将密钥存储在环境变量或密钥管理服务中
+  # RSA 密钥对配置(Base64 编码,PKCS#8 私钥 / X.509 公钥)
+  # 从环境变量读取,生产环境应将密钥存储在环境变量或密钥管理服务中
   rsa:
-    private-key: MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCubuA/TO9nzpsbNd5Z+A+kAAbc79SpzRd+ptTzz3T3SDx/eoreAjNHw+QwM8f/4ZjfNlsRL0mx/htI75SPeY3TBK97xMcY2HhMhiMnuaeMqakdt6Lxu0lirsOPy3dNrPYVJA6VnEBGdSMudu7Sk2teDLjMDFnCSUFu1os5mOwhwOkUSb/9FMP7HLuhSYza76as9i3jFlME1sAvXUaUbNyTeob94ECgTCBBRDYORaq3vY6S8YSGJejCFH8T90BKJls0nh92gFDnfeo7XGDP0O+nw7GxQl7FapHndnziJpntLrkDC9ps8oD1jUcB+AYVtqk4lAgl+89LCi2UY6+p1sFzAgMBAAECggEAANp6nClhrCCkl94EmscGdJCqSsEksu3dMHI1zzlzvRwbTzK20bEEeeseFoSjwEbsd1E7LS+VR16LUWVFgkZuvUPcbVk+WzCWTDVQvl1Os8nGmUg2FKVIdynm6M8jgh2bK49tTtckVsa8DyecDBxLAcadzkI9rmt9sA3JfePixFituNc6a+V+K3eQOmiYUhbbVi7fyMefF95lQp1yJ9Q0mpOLdO57jhISXspRhochH/jPgg5Z/pdgbfjEzxHhbPQzrtFZtQlJGa/EyudyPCVWiqJxwz8d2w1kauIopK+flaJw3ddbH0nAmOUt/6SBiIGy1iFv5c55wAZCONoacmCVUQKBgQDx1P3Nec4bVsbOkLNWd8PxPKAFMPXqAQ4OzaYt1GQX+nsv8I0gs3nAcdHK6JB9g2VvjXyS/qjgJPgbdz5lA4heLbnMABttGoGJkeOHOCmmjvDIcxvRtxUBxS/IaiF2iwBs+FoR2ituJ/YMPZNhlasPoPzdB4C228KUz/XhQbpm6wKBgQC4pwhYRyMB27swSt6EpXuhQmzqXoklpygdS9RxwxSWCvQ66oahnsi5MuIUzz2yLBVIvN5uT5Y8jzEub+J+X2H6DXC0XnLGqI1xLDd1jmnrJOeiPs9+CJg0ka8blaETufulSF5DkvjCQnlZ88ClMc5p913BiaLaIxjn3CrtEOv9mQKBgHZKYg91Kk0TKFH4U9DS6oSAzCFd7pwVAgRZsZSvVHqqKkGr38yEHeT1h9JB6hOLBz4Grk3UxVRGoRoGPP36OWUf5scTslau5XgeZXZKEY2IU90o+Q2fCWaBRrs4tr+ehInI/X3IAwByCZe5MvND25XcgHO5bMuFOWvDQZl6piwbAoGBAIFKc01cgeaLNEZcJfI67JW9LQXtq5nxsOTSc640KfXlNZ0LGbmQtHr4ZdSsR0a6Fy0XEaerkkZU/NrG/I//uVqcjo28lCEFZAQaMbrePMuoy4eO8zoMSoaEe1eVLXPihZD1Wwt1nThn0xBo3DrO5PjNe5hIBv82E/pE7smPT64BAoGBAKesjnw2+//xRsQwSNpLSKNkebonFz6fwoUe34k9FDkFd69XYNWwjWHzr3zqG+/CLcM3yA9Eyrlhuh86b5eqS2hNVJzUwdtLI0pqlKd2+iV7tLNFGdNoh9kWjklxWeqmg9DNkbzVx9PRPMBjbom+Ie4MiVryYHxiAbeyZkaRapEO
-    public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArm7gP0zvZ86bGzXeWfgPpAAG3O/Uqc0XfqbU889090g8f3qK3gIzR8PkMDPH/+GY3zZbES9Jsf4bSO+Uj3mN0wSve8THGNh4TIYjJ7mnjKmpHbei8btJYq7Dj8t3Taz2FSQOlZxARnUjLnbu0pNrXgy4zAxZwklBbtaLOZjsIcDpFEm//RTD+xy7oUmM2u+mrPYt4xZTBNbAL11GlGzck3qG/eBAoEwgQUQ2DkWqt72OkvGEhiXowhR/E/dASiZbNJ4fdoBQ533qO1xgz9Dvp8OxsUJexWqR53Z84iaZ7S65AwvabPKA9Y1HAfgGFbapOJQIJfvPSwotlGOvqdbBcwIDAQAB
+    private-key: ${RSA_PRIVATE_KEY}
+    public-key: ${RSA_PUBLIC_KEY}
+
+# 速率限制配置
+rate:
+  limit:
+    # 登录/注册接口：每分钟允许的请求数
+    login:
+      per-minute: ${RATE_LIMIT_LOGIN:5}
+    # 通用 API 接口：每分钟允许的请求数
+    api:
+      per-minute: ${RATE_LIMIT_API:60}
+
+# 账户锁定配置
+account:
+  lock:
+    # 最大失败次数（默认 5 次）
+    max-failures: ${ACCOUNT_LOCK_MAX_FAILURES:5}
+    # 锁定时长（分钟，默认 15 分钟）
+    duration-minutes: ${ACCOUNT_LOCK_DURATION:15}

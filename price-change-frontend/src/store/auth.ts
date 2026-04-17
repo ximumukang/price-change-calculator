@@ -1,13 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { getPublicKey as fetchPublicKey } from '@/api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('token') || '')
-  const username = ref(localStorage.getItem('username') || '')
+  // 初始化时只获取非空的 token
+  const storedToken = localStorage.getItem('token')
+  const storedRefreshToken = localStorage.getItem('refreshToken')
+  const storedUsername = localStorage.getItem('username')
+  
+  const token = ref(storedToken && storedToken.trim() !== '' ? storedToken : '')
+  const refreshToken = ref(storedRefreshToken && storedRefreshToken.trim() !== '' ? storedRefreshToken : '')
+  const username = ref(storedUsername || '')
 
   const setToken = (newToken: string) => {
     token.value = newToken
     localStorage.setItem('token', newToken)
+  }
+
+  const setRefreshToken = (newToken: string) => {
+    refreshToken.value = newToken
+    localStorage.setItem('refreshToken', newToken)
   }
 
   const setUsername = (name: string) => {
@@ -15,12 +27,27 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('username', name)
   }
 
+  /**
+   * 初始化认证信息（页面刷新时调用）
+   * 恢复 token 并获取最新的 RSA 公钥
+   */
+  const initAuth = async () => {
+    // 如果有 token，尝试获取公钥（用于后续可能的重新登录）
+    try {
+      await fetchPublicKey()
+    } catch (e) {
+      console.warn('[Auth] 获取公钥失败', e)
+    }
+  }
+
   const logout = () => {
     token.value = ''
+    refreshToken.value = ''
     username.value = ''
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('username')
   }
 
-  return { token, username, setToken, setUsername, logout }
+  return { token, refreshToken, username, setToken, setRefreshToken, setUsername, initAuth, logout }
 })

@@ -4,7 +4,7 @@
 # ============================================
 
 $ErrorActionPreference = "SilentlyContinue"
-$MYSQL_CONTAINER = "price-change-mysql"
+$MYSQL_CONTAINER = "mysql-local"
 
 Write-Host "正在停止服务..." -ForegroundColor Yellow
 

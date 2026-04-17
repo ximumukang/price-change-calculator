@@ -23,7 +23,9 @@ const loadItems = async () => {
   try {
     items.value = await getPriceItems(sortOrder.value)
   } catch (e: any) {
-    ElMessage.error('加载失败')
+    const errorMsg = e.response?.data?.message || e.message || '加载失败'
+    ElMessage.error(errorMsg)
+    items.value = []
   } finally {
     loading.value = false
   }
@@ -35,21 +37,43 @@ const handleSort = async (order: string) => {
 }
 
 const handleAdd = async () => {
-  if (!form.value.name || form.value.currentValue <= 0 || form.value.targetValue <= 0) {
-    ElMessage.warning('请填写完整信息')
+  // 表单验证
+  if (!form.value.name || form.value.name.trim().length === 0) {
+    ElMessage.warning('请输入名称')
     return
   }
+  if (form.value.name.length > 100) {
+    ElMessage.warning('名称长度不能超过100字符')
+    return
+  }
+  if (!form.value.currentValue || form.value.currentValue <= 0) {
+    ElMessage.warning('当前值必须大于0')
+    return
+  }
+  if (form.value.currentValue > 999999999) {
+    ElMessage.warning('当前值过大，请检查输入')
+    return
+  }
+  if (form.value.targetValue < 0) {
+    ElMessage.warning('目标值不能为负数')
+    return
+  }
+  if (form.value.targetValue > 999999999) {
+    ElMessage.warning('目标值过大，请检查输入')
+    return
+  }
+
   try {
     if (isEdit.value && editingId.value !== null) {
       await updatePriceItem(editingId.value, {
-        name: form.value.name,
+        name: form.value.name.trim(),
         currentValue: form.value.currentValue,
         targetValue: form.value.targetValue
       })
       ElMessage.success('更新成功')
     } else {
       await createPriceItem({
-        name: form.value.name,
+        name: form.value.name.trim(),
         currentValue: form.value.currentValue,
         targetValue: form.value.targetValue
       })
@@ -61,7 +85,8 @@ const handleAdd = async () => {
     editingId.value = null
     await loadItems()
   } catch (e: any) {
-    ElMessage.error(isEdit.value ? '更新失败' : '添加失败')
+    const errorMsg = e.response?.data?.message || e.message || (isEdit.value ? '更新失败' : '添加失败')
+    ElMessage.error(errorMsg)
   }
 }
 
@@ -100,7 +125,8 @@ const handleDelete = async (id: number) => {
     await loadItems()
   } catch (e: any) {
     if (e !== 'cancel') {
-      ElMessage.error('删除失败')
+      const errorMsg = e.response?.data?.message || e.message || '删除失败'
+      ElMessage.error(errorMsg)
     }
   }
 }

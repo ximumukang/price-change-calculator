@@ -27,9 +27,12 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  if (to.meta.requiresAuth && !token) {
+  // 检查 token 是否存在且不为空
+  const hasValidToken = token && token.trim() !== ''
+  
+  if (to.meta.requiresAuth && !hasValidToken) {
     next('/login')
-  } else if ((to.path === '/login' || to.path === '/register') && token) {
+  } else if ((to.path === '/login' || to.path === '/register') && hasValidToken) {
     next('/')
   } else {
     next()

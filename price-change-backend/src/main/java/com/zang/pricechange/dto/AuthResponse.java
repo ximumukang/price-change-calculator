@@ -16,8 +16,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor  // Lombok：生成无参构造方法
 @AllArgsConstructor  // Lombok：生成包含所有字段的构造方法
 public class AuthResponse {
-    // JWT Token：用户身份凭证，后续请求需要携带
+    // JWT Access Token：用户身份凭证，后续请求需要携带
     private String token;
+    // Refresh Token：用于刷新 Access Token，过期时间更长
+    private String refreshToken;
     // 用户名：用于前端显示
     private String username;
 }

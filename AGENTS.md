@@ -82,6 +82,8 @@ D:\zang\
 
 ### 后端 (Maven)
 
+运行后端服务时 用./start-backend.ps1
+
 ```powershell
 cd D:\zang\price-change-backend
 
@@ -91,8 +93,6 @@ mvn clean compile
 # 打包
 mvn package -DskipTests
 
-# 运行
-mvn spring-boot:run
 
 # 运行 JAR
 java -jar target/price-change-backend-1.0.0.jar
@@ -360,6 +360,30 @@ export default router
 
 ## 4. 配置说明
 
+### 环境变量配置
+
+**重要**: 敏感信息（数据库密码、JWT 密钥、RSA 密钥）必须通过环境变量配置，禁止硬编码在配置文件中。
+
+项目根目录提供 `.env.example` 模板文件，复制为 `.env` 并填入实际值：
+
+```bash
+cp .env.example .env
+# 编辑 .env 文件填入实际值
+```
+
+**必需的环境变量**:
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `DB_USERNAME` | 数据库用户名 | `root` |
+| `DB_PASSWORD` | 数据库密码 | `<强密码>` |
+| `JWT_SECRET` | JWT 签名密钥（至少 256 位 Base64） | `openssl rand -base64 32` |
+| `JWT_EXPIRATION` | Token 过期时间（毫秒） | `7200000` |
+| `RSA_PRIVATE_KEY` | RSA 私钥（Base64 编码 PKCS#8） | `<生成的私钥>` |
+| `RSA_PUBLIC_KEY` | RSA 公钥（Base64 编码 X.509） | `<生成的公钥>` |
+
+**注意**: `.env` 文件已加入 `.gitignore`，不会被提交到版本控制系统。
+
 ### application.yml
 
 ```yaml
@@ -367,8 +391,8 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/price_change?...
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: root
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
 mybatis-plus:
   configuration:
@@ -382,12 +406,15 @@ server:
   port: 8080
 
 jwt:
-  secret: <至少256位的密钥>
-  expiration: 7200000  # Token 过期时间（毫秒），默认 2 小时
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:7200000}
 
 app:
   cors:
     allowed-origins: http://localhost:5173,http://localhost:3000
+  rsa:
+    private-key: ${RSA_PRIVATE_KEY}
+    public-key: ${RSA_PUBLIC_KEY}
 ```
 
 ### 依赖版本
@@ -442,7 +469,7 @@ app:
 
 ## 7. 开发流程
 
-1. **后端启动**: `mvn spring-boot:run` (端口 8080)
+1. **后端启动**:  用./start-backend.ps1` (端口 8080)
 2. **前端启动**: `npm run dev` (端口 5173)
 3. **访问**: http://localhost:5173
 4. **测试 API**:
@@ -455,17 +482,4 @@ app:
 
 ---
 
-## 8. 优化清单（已完成）
 
-| 优化项 | 状态 |
-|--------|------|
-| PriceItemService 除零保护 | ✅ |
-| RsaUtils 移除无用导入 + OAEP 填充 | ✅ |
-| JwtTokenProvider 提取公共解析方法 + 细化异常 | ✅ |
-| UserService 消除重复代码 | ✅ |
-| AuthController 消除重复 Token 生成 | ✅ |
-| PriceItemController 构造器简化转换 | ✅ |
-| GlobalExceptionHandler 添加日志 | ✅ |
-| JwtAuthenticationFilter 已有认证检查 + 日志 | ✅ |
-| Entity 添加 FieldFill 注解 | ✅ |
-| SecurityConfig CORS 配置外部化 | ✅ |

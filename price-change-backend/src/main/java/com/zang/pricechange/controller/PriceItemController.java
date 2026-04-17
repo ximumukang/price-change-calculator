@@ -1,5 +1,6 @@
 package com.zang.pricechange.controller;
 
+import com.zang.pricechange.annotation.AuditLog;
 import com.zang.pricechange.common.Result;
 import com.zang.pricechange.dto.PriceItemRequest;
 import com.zang.pricechange.dto.PriceItemResponse;
@@ -31,6 +32,7 @@ public class PriceItemController {
     /**
      * 新增涨跌幅记录
      */
+    @AuditLog(value = "新增涨跌幅记录", operationType = AuditLog.OperationType.CREATE)
     @Operation(summary = "新增记录", description = "创建新的涨跌幅记录")
     @PostMapping
     public Result<PriceItemResponse> create(
@@ -48,6 +50,7 @@ public class PriceItemController {
     /**
      * 查询当前用户的所有涨跌幅记录
      */
+    @AuditLog(value = "查询涨跌幅记录列表", operationType = AuditLog.OperationType.QUERY)
     @Operation(summary = "查询记录列表", description = "获取当前用户的所有涨跌幅记录，支持排序")
     @GetMapping
     public Result<List<PriceItemResponse>> list(
@@ -60,6 +63,7 @@ public class PriceItemController {
     /**
      * 删除涨跌幅记录
      */
+    @AuditLog(value = "删除涨跌幅记录", operationType = AuditLog.OperationType.DELETE)
     @Operation(summary = "删除记录", description = "删除指定ID的涨跌幅记录")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
@@ -72,6 +76,7 @@ public class PriceItemController {
     /**
      * 更新涨跌幅记录
      */
+    @AuditLog(value = "更新涨跌幅记录", operationType = AuditLog.OperationType.UPDATE)
     @Operation(summary = "更新记录", description = "更新指定ID的涨跌幅记录")
     @PutMapping("/{id}")
     public Result<PriceItemResponse> update(
@@ -91,7 +96,7 @@ public class PriceItemController {
     private PriceItemResponse toResponse(PriceItem item) {
         return new PriceItemResponse(
                 item.getId(),
-                item.getName(),
+                item.getName(),  // EncryptedStringTypeHandler 已自动解密
                 item.getCurrentValue(),
                 item.getTargetValue(),
                 item.getChangePercent(),

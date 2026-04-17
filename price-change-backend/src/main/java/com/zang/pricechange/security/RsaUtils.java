@@ -140,4 +140,15 @@ public class RsaUtils {
             throw new RuntimeException("RSA 解密失败", e);
         }
     }
+
+    public String encrypt(String plaintext) {
+        try {
+            Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
+            cipher.init(Cipher.ENCRYPT_MODE, getPublicKey());
+            byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(encrypted);
+        } catch (Exception e) {
+            throw new RuntimeException("RSA 加密失败", e);
+        }
+    }
 }

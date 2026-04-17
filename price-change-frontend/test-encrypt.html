@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>RSA Test</title></head>
+<body>
+<h1>RSA Encryption Test</h1>
+<div id="result"></div>
+<script type="module">
+import JSEncrypt from './node_modules/jsencrypt/bin/jsencrypt.js';
+
+const publicKey = `MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp1UHOrKkXZ/Ey7Uokd4MdjbTN6ayd0wJ5pxg6YsdBXjO/p2G82YKr9eLuSXKYuy91sbzJ8KFTgJRK0eQtQaUGC6ToeLLyICXn6p5jJ3nJd6qHXoBIWMzouayRMAU2TxeJdo8eZ6jsEWi5ysRG0x8UI4cES9inUDL6gncrBdGFz7NFUPKvcJ9vHgaZ20hfV7qRgBeGZwSyBA0jLbAGI5VDqgVWVkmoae92pn0ns8XS0UwoFc4NmzYkUu2We1UlVkWiptOeNcyYFHsAp+Z3exyfCn5uCEqdo13dvtsgjr2ZsyzDljqTozEX+ja7WBmA7ouarxquIL0fEOcwcIMquOvewIDAQAB`;
+
+const encryptor = new JSEncrypt();
+encryptor.setPublicKey(publicKey);
+
+const text = "lihang";
+const encrypted = encryptor.encrypt(text);
+
+document.getElementById('result').innerHTML = `
+<p>Original: ${text}</p>
+<p>Encrypted length: ${encrypted ? encrypted.length : 'FAILED'}</p>
+<p>Encrypted: ${encrypted || 'null'}</p>
+`;
+</script>
+</body>
+</html>

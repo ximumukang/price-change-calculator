@@ -1,6 +1,8 @@
 package com.zang.pricechange.config;
 
+import com.zang.pricechange.security.ApiSignatureFilter;
 import com.zang.pricechange.security.JwtAuthenticationFilter;
+import com.zang.pricechange.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +35,16 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
+     * 速率限制过滤器，用于防止暴力破解和 DDoS 攻击
+     */
+    private final RateLimitFilter rateLimitFilter;
+
+    /**
+     * API 签名验证过滤器，用于防止请求篡改
+     */
+    private final ApiSignatureFilter apiSignatureFilter;
+
+    /**
      * CORS允许的源地址列表
      * 从配置文件读取，默认为前端开发服务器地址
      */
@@ -56,6 +68,27 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // 设置会话管理为无状态模式（不使用Session）
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 配置安全响应头
+                .headers(headers -> headers
+                        // X-Content-Type-Options: nosniff - 防止 MIME 类型嗅探
+                        .contentTypeOptions(contentType -> contentType.disable())
+                        // X-Frame-Options: DENY - 禁止嵌入 iframe，防止点击劫持
+                        .frameOptions(frame -> frame.deny())
+                        // X-XSS-Protection: 0 - 禁用浏览器 XSS 过滤（现代浏览器已内置）
+                        .xssProtection(xss -> xss.disable())
+                        // Content-Security-Policy: 内容安全策略，限制资源加载来源
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; " +
+                                "script-src 'self' 'unsafe-inline'; " +
+                                "style-src 'self' 'unsafe-inline'; " +
+                                "img-src 'self' data: https:; " +
+                                "font-src 'self'; " +
+                                "connect-src 'self'; " +
+                                "frame-ancestors 'none'; " +
+                                "base-uri 'self'; " +
+                                "form-action 'self'"
+                        ))
+                )
                 // 配置请求授权规则
                 .authorizeHttpRequests(auth -> auth
                         // 允许所有用户访问认证相关接口（登录、注册、获取公钥等）
@@ -66,7 +99,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 // 在UsernamePasswordAuthenticationFilter之前添加JWT认证过滤器
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 在JWT过滤器之前添加速率限制过滤器
+                .addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class)
+                // 在速率限制过滤器之前添加API签名验证过滤器
+                .addFilterBefore(apiSignatureFilter, RateLimitFilter.class);
 
         return http.build();
     }
@@ -84,10 +121,14 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(allowedOrigins);
         // 设置允许的HTTP方法
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        // 设置允许的请求头（*表示允许所有）
-        configuration.setAllowedHeaders(List.of("*"));
+        // 设置允许的请求头（明确列出，不使用 *）
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+        // 设置暴露的响应头
+        configuration.setExposedHeaders(List.of("Authorization"));
         // 允许携带凭证（如Cookie、Authorization头等）
         configuration.setAllowCredentials(true);
+        // 预检请求缓存时间（秒）
+        configuration.setMaxAge(3600L);
 
         // 将CORS配置应用到所有路径
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

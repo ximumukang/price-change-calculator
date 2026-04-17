@@ -13,25 +13,40 @@ const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
 
+// 组件挂载时获取 RSA 公钥
 onMounted(async () => {
   try {
     await getPublicKey()
-  } catch (e) {
+  } catch (e: any) {
+    console.error('[Register] Failed to get public key:', e)
     ElMessage.error('获取公钥失败，请检查后端服务是否启动')
   }
 })
 
 const handleRegister = async () => {
-  if (!username.value || !password.value) {
-    ElMessage.warning('请输入用户名和密码')
+  // 前端表单验证
+  if (!username.value || !password.value || !confirmPassword.value) {
+    ElMessage.warning('请填写完整信息')
     return
   }
   if (username.value.length < 3 || username.value.length > 50) {
     ElMessage.warning('用户名长度需在3-50字符之间')
     return
   }
-  if (password.value.length < 6) {
-    ElMessage.warning('密码长度至少6位')
+  if (password.value.length < 8) {
+    ElMessage.warning('密码长度至少8位')
+    return
+  }
+  if (!/[a-z]/.test(password.value)) {
+    ElMessage.warning('密码必须包含小写字母')
+    return
+  }
+  if (!/[A-Z]/.test(password.value)) {
+    ElMessage.warning('密码必须包含大写字母')
+    return
+  }
+  if (!/\d/.test(password.value)) {
+    ElMessage.warning('密码必须包含数字')
     return
   }
   if (password.value !== confirmPassword.value) {
@@ -41,13 +56,21 @@ const handleRegister = async () => {
 
   loading.value = true
   try {
+    // 调用注册接口（用户名和密码会自动 RSA 加密）
     const res = await register(username.value, password.value)
+    
+    // 保存认证信息到 store 和 localStorage
     authStore.setToken(res.token)
+    authStore.setRefreshToken(res.refreshToken)
     authStore.setUsername(res.username)
+    
     ElMessage.success('注册成功')
     router.push('/')
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.message || '注册失败')
+    console.error('[Register] Registration error:', e)
+    // 优先显示后端返回的错误信息
+    const errorMsg = e.response?.data?.message || e.message || '注册失败'
+    ElMessage.error(errorMsg)
   } finally {
     loading.value = false
   }
@@ -65,7 +88,7 @@ const handleRegister = async () => {
           <el-input v-model="username" placeholder="用户名（3-50字符）" />
         </el-form-item>
         <el-form-item>
-          <el-input v-model="password" type="password" placeholder="密码（至少6位）" show-password />
+          <el-input v-model="password" type="password" placeholder="密码（至少8位，含大小写字母和数字）" show-password />
         </el-form-item>
         <el-form-item>
           <el-input v-model="confirmPassword" type="password" placeholder="确认密码" show-password />
