@@ -45,3 +45,12 @@ export const register = (username: string, password: string) => {
     password: encrypt(password)
   })
 }
+
+/**
+ * 刷新 Access Token
+ * @param refreshToken 刷新令牌
+ * @returns 新的认证响应
+ */
+export const refreshToken = (refreshToken: string) => {
+  return post<AuthResponse>('/auth/refresh', { refreshToken })
+}

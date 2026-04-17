@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getPublicKey as fetchPublicKey } from '@/api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -7,10 +7,15 @@ export const useAuthStore = defineStore('auth', () => {
   const storedToken = localStorage.getItem('token')
   const storedRefreshToken = localStorage.getItem('refreshToken')
   const storedUsername = localStorage.getItem('username')
-  
+
   const token = ref(storedToken && storedToken.trim() !== '' ? storedToken : '')
   const refreshToken = ref(storedRefreshToken && storedRefreshToken.trim() !== '' ? storedRefreshToken : '')
   const username = ref(storedUsername || '')
+
+  // 计算属性：是否已认证
+  const isAuthenticated = computed(() => {
+    return !!(token.value && token.value.trim() !== '')
+  })
 
   const setToken = (newToken: string) => {
     token.value = newToken
@@ -49,5 +54,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('username')
   }
 
-  return { token, refreshToken, username, setToken, setRefreshToken, setUsername, initAuth, logout }
+  return { token, refreshToken, username, isAuthenticated, setToken, setRefreshToken, setUsername, initAuth, logout }
 })

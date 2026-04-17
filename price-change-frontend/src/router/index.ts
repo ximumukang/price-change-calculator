@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '@/store/auth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -26,10 +27,9 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  // 检查 token 是否存在且不为空
-  const hasValidToken = token && token.trim() !== ''
-  
+  const authStore = useAuthStore()
+  const hasValidToken = authStore.isAuthenticated
+
   if (to.meta.requiresAuth && !hasValidToken) {
     next('/login')
   } else if ((to.path === '/login' || to.path === '/register') && hasValidToken) {
