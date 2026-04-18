@@ -1,8 +1,24 @@
 $BACKEND_DIR = "D:\zang\price-change-backend"
 $MYSQL_CONTAINER = "mysql-local"
 $ENV_FILE = "D:\zang\.env"
+$BACKEND_PORT = 8080
 
-Write-Host "[1/3] Check MySQL container..."
+Write-Host "[0/4] Check and stop existing backend..."
+$existingProc = Get-NetTCPConnection -LocalPort $BACKEND_PORT -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess
+if ($existingProc) {
+    $proc = Get-Process -Id $existingProc -ErrorAction SilentlyContinue
+    if ($proc -and $proc.ProcessName -ne "java" -and $proc.ProcessName -ne "javaw") {
+        Write-Host "  Stopped process $existingProc" -ForegroundColor Yellow
+    } else {
+        Write-Host "  Stopped backend on port $BACKEND_PORT" -ForegroundColor Yellow
+    }
+    Stop-Process -Id $existingProc -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+} else {
+    Write-Host "  No backend running on port $BACKEND_PORT" -ForegroundColor Green
+}
+
+Write-Host "[1/4] Check MySQL container..."
 $running = docker ps --filter "name=$MYSQL_CONTAINER" --format "{{.Names}}" 2>$null
 if ($running -ne $MYSQL_CONTAINER) {
     $exists = docker ps -a --filter "name=$MYSQL_CONTAINER" --format "{{.Names}}" 2>$null
@@ -17,7 +33,7 @@ if ($running -ne $MYSQL_CONTAINER) {
     Write-Host "  MySQL is running" -ForegroundColor Green
 }
 
-Write-Host "[2/3] Wait for MySQL ready..."
+Write-Host "[2/4] Wait for MySQL ready..."
 for ($i = 0; $i -lt 30; $i++) {
     $output = docker exec $MYSQL_CONTAINER mysqladmin ping -h localhost -u root -proot --silent 2>&1
     if ($output -match "alive") {
@@ -27,7 +43,7 @@ for ($i = 0; $i -lt 30; $i++) {
     Start-Sleep -Seconds 2
 }
 
-Write-Host "[3/3] Load environment variables..."
+Write-Host "[3/4] Load environment variables..."
 if (Test-Path $ENV_FILE) {
     $lines = Get-Content $ENV_FILE -Encoding UTF8
     foreach ($line in $lines) {
