@@ -68,6 +68,17 @@ const handleSort = async (order: string) => {
   await loadItems()
 }
 
+const handleTableSort = (sortParam: { prop: string; order: string | null }) => {
+  if (sortParam.order === 'ascending') {
+    handleSort('asc')
+  } else if (sortParam.order === 'descending') {
+    handleSort('desc')
+  } else {
+    // 默认降序
+    handleSort('desc')
+  }
+}
+
 const handleAdd = async () => {
   if (!form.value.name || form.value.name.trim().length === 0) {
     ElMessage.warning('请输入名称')
@@ -275,17 +286,9 @@ onMounted(() => {
 
         <div class="toolbar">
           <el-button type="primary" @click="openDialog()">新增</el-button>
-          <div class="sort-buttons">
-            <el-button :type="sortOrder === 'asc' ? 'success' : 'default'" @click="handleSort('asc')">
-              升序
-            </el-button>
-            <el-button :type="sortOrder === 'desc' ? 'success' : 'default'" @click="handleSort('desc')">
-              降序
-            </el-button>
-          </div>
         </div>
 
-        <el-table :data="items" v-loading="loading" style="width: 100%">
+        <el-table :data="items" v-loading="loading" style="width: 100%" @sort-change="handleTableSort">
           <el-table-column prop="categoryName" label="分类" width="100">
             <template #default="{ row }">
               <el-tag v-if="row.categoryName" size="small" type="info">{{ row.categoryName }}</el-tag>
@@ -303,7 +306,7 @@ onMounted(() => {
               {{ row.targetValue?.toFixed(2) }}
             </template>
           </el-table-column>
-          <el-table-column prop="changePercent" label="涨跌幅">
+          <el-table-column prop="changePercent" label="涨跌幅" sortable="custom">
             <template #default="{ row }">
               <span :class="getPercentClass(row.changePercent)">
                 {{ formatPercent(row.changePercent) }}
@@ -455,12 +458,8 @@ onMounted(() => {
 }
 .toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 16px;
-}
-.sort-buttons {
-  display: flex;
-  gap: 8px;
 }
 .percent-up {
   color: #f56c6c;
