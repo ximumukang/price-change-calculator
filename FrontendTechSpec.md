@@ -173,6 +173,7 @@ export function encryptPassword(password: string): string {
 2. **类型推断**: 避免 `any`，优先 TypeScript 类型
 3. **RSA 加密**: 前端 jsencrypt，后端 RSA/ECB/PKCS1Padding
 4. **代理配置**: Vite `/api` 代理到 `http://localhost:8080`
+5. **ID 类型必须用 string**: 后端所有表的 ID 均为雪花算法生成的 Long（如 `2045362233630998530`），超出 JS `Number.MAX_SAFE_INTEGER`（9007199254740991），后端已通过 `@JsonSerialize(using = ToStringSerializer.class)` 将 ID 序列化为字符串返回。前端接口定义、变量、参数中所有 ID（包括 `id`、`categoryId` 等）**必须声明为 `string`**，禁止使用 `number`，禁止 `Number()` 转换，否则会丢失末尾精度
 
 ## 5. Vite 代理配置
 

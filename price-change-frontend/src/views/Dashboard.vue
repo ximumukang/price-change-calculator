@@ -16,21 +16,21 @@ const sortOrder = ref('desc')
 const loading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const form = ref({
   name: '',
   currentValue: 0,
   targetValue: 0,
-  categoryId: null as number | null
+  categoryId: null as string | null
 })
 
 // 分类相关
 const activeTab = ref('all') // 默认选中"全部"
-const activeCategoryId = computed(() => activeTab.value === 'all' ? null : Number(activeTab.value))
+const activeCategoryId = computed(() => activeTab.value === 'all' ? null : activeTab.value)
 const categoryDialogVisible = ref(false)
 const categoryForm = ref({ name: '' })
 const isCategoryEdit = ref(false)
-const editingCategoryId = ref<number | null>(null)
+const editingCategoryId = ref<string | null>(null)
 const showCategoryManage = ref(false)
 
 const loadCategories = async () => {
@@ -144,7 +144,7 @@ const handleCloseDialog = () => {
   form.value = { name: '', currentValue: 0, targetValue: 0, categoryId: null }
 }
 
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: string) => {
   try {
     await ElMessageBox.confirm('确定要删除这条记录吗？', '提示', {
       confirmButtonText: '确定',
