@@ -14,6 +14,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/Register.vue')
   },
   {
+    path: '/recovery',
+    name: 'RecoveryCalculator',
+    component: () => import('../views/RecoveryCalculator.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),

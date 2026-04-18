@@ -237,6 +237,10 @@ const handleLogout = () => {
   window.location.href = '/login'
 }
 
+const openRecoveryWindow = () => {
+  window.open('/recovery', '_blank')
+}
+
 const formatPercent = (val: number) => {
   const num = val || 0
   return (num > 0 ? '+' : '') + num.toFixed(2) + '%'
@@ -261,6 +265,7 @@ onMounted(() => {
         <div class="header-content">
           <h2>涨跌幅计算器</h2>
           <div class="header-right">
+            <el-button type="success" size="small" @click="openRecoveryWindow">回本计算器</el-button>
             <span>欢迎，{{ authStore.username }}</span>
             <el-button type="danger" size="small" @click="handleLogout">退出</el-button>
           </div>
