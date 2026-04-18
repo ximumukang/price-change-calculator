@@ -118,8 +118,8 @@ request.interceptors.response.use(
       const status = error.response.status
       const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-      // 401：尝试刷新 Token 并重试
-      if (status === 401 && originalRequest && !originalRequest._retry) {
+      // 401 或 403：尝试刷新 Token 并重试
+      if ((status === 401 || status === 403) && originalRequest && !originalRequest._retry) {
         originalRequest._retry = true
 
         const newToken = await refreshAccessToken()
@@ -128,20 +128,8 @@ request.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`
           return request(originalRequest)
         }
-      }
-
-      // 403：未授权或禁止，清除登录状态并跳转登录页
-      if (status === 401 || status === 403) {
-        try {
-          const authStore = useAuthStore()
-          authStore.logout()
-        } catch (e) {
-          // ignore
-        }
-        // 避免重复跳转
-        if (router.currentRoute.value.path !== '/login') {
-          router.push('/login')
-        }
+        // 刷新失败，返回错误（refreshAccessToken 内部已处理跳转登录页）
+        return Promise.reject(error)
       }
 
       // 尝试从后端响应中提取错误信息
