@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getPriceItems, createPriceItem, deletePriceItem, updatePriceItem,
@@ -25,11 +25,13 @@ const form = ref({
 })
 
 // 分类相关
-const activeCategoryId = ref<number | null>(null) // null 表示"全部"
+const activeTab = ref('all') // 默认选中"全部"
+const activeCategoryId = computed(() => activeTab.value === 'all' ? null : Number(activeTab.value))
 const categoryDialogVisible = ref(false)
 const categoryForm = ref({ name: '' })
 const isCategoryEdit = ref(false)
 const editingCategoryId = ref<number | null>(null)
+const showCategoryManage = ref(false)
 
 const loadCategories = async () => {
   try {
@@ -42,7 +44,7 @@ const loadCategories = async () => {
 const loadItems = async () => {
   loading.value = true
   try {
-    const categoryIdParam = activeCategoryId.value ?? undefined
+    const categoryIdParam = activeCategoryId.value !== null ? activeCategoryId.value : undefined
     items.value = await getPriceItems(sortOrder.value, categoryIdParam)
   } catch (e: any) {
     const errorMsg = e.response?.data?.message || e.message || '加载失败'
@@ -54,6 +56,10 @@ const loadItems = async () => {
 }
 
 const handleCategoryChange = () => {
+  loadItems()
+}
+
+const handleTabChange = () => {
   loadItems()
 }
 
@@ -203,8 +209,8 @@ const handleDeleteCategory = async (cat: Category) => {
     await deleteCategory(cat.id)
     ElMessage.success('分类删除成功')
     // 如果当前选中的分类被删除，回到全部
-    if (activeCategoryId.value === cat.id) {
-      activeCategoryId.value = null
+    if (activeTab.value === String(cat.id)) {
+      activeTab.value = 'all'
     }
     await Promise.all([loadCategories(), loadItems()])
   } catch (e: any) {
@@ -251,30 +257,20 @@ onMounted(() => {
       </el-header>
       <el-main>
         <!-- 分类 Tab 栏 -->
-        <div class="category-tabs">
-          <el-tag
-            :type="activeCategoryId === null ? 'primary' : 'info'"
-            :effect="activeCategoryId === null ? 'dark' : 'plain'"
-            class="category-tag"
-            @click="activeCategoryId = null; handleCategoryChange()"
-          >
-            全部
-          </el-tag>
-          <el-tag
-            v-for="cat in categories"
-            :key="cat.id"
-            :type="activeCategoryId === cat.id ? 'primary' : 'info'"
-            :effect="activeCategoryId === cat.id ? 'dark' : 'plain'"
-            class="category-tag"
-            closable
-            @click="activeCategoryId = cat.id; handleCategoryChange()"
-            @close="handleDeleteCategory(cat)"
-          >
-            <span class="category-name" @click.stop="openCategoryDialog(cat)">{{ cat.name }}</span>
-          </el-tag>
-          <el-button class="add-category-btn" size="small" circle @click="openCategoryDialog()">
-            <el-icon><span>+</span></el-icon>
-          </el-button>
+        <div class="category-tabs-wrapper">
+          <el-tabs v-model="activeTab" class="category-tabs" @tab-change="handleTabChange">
+            <el-tab-pane label="全部" name="all" />
+            <el-tab-pane
+              v-for="cat in categories"
+              :key="cat.id"
+              :label="cat.name"
+              :name="String(cat.id)"
+            />
+          </el-tabs>
+          <div class="category-actions">
+            <el-button size="small" @click="openCategoryDialog()">+ 新建分类</el-button>
+            <el-button size="small" type="info" plain @click="showCategoryManage = true">管理分类</el-button>
+          </div>
         </div>
 
         <div class="toolbar">
@@ -378,6 +374,24 @@ onMounted(() => {
         <el-button type="primary" @click="handleCategorySubmit">{{ isCategoryEdit ? '更新' : '确定' }}</el-button>
       </template>
     </el-dialog>
+
+    <!-- 分类管理对话框 -->
+    <el-dialog v-model="showCategoryManage" title="管理分类" width="400px">
+      <div class="category-list">
+        <div v-for="cat in categories" :key="cat.id" class="category-item">
+          <span>{{ cat.name }}</span>
+          <div class="category-item-actions">
+            <el-button size="small" type="primary" link @click="openCategoryDialog(cat)">编辑</el-button>
+            <el-button size="small" type="danger" link @click="handleDeleteCategory(cat)">删除</el-button>
+          </div>
+        </div>
+        <el-empty v-if="categories.length === 0" description="暂无分类" :image-size="60" />
+      </div>
+      <template #footer>
+        <el-button @click="showCategoryManage = false">关闭</el-button>
+        <el-button type="primary" @click="openCategoryDialog()">新建分类</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -404,29 +418,37 @@ onMounted(() => {
 .el-main {
   padding: 20px;
 }
-.category-tabs {
+.category-tabs-wrapper {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
   margin-bottom: 16px;
 }
-.category-tag {
-  cursor: pointer;
-  transition: all 0.2s;
+.category-tabs {
+  flex: 1;
 }
-.category-tag:hover {
-  opacity: 0.85;
+.category-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
 }
-.category-name {
-  cursor: text;
+.category-list {
+  max-height: 400px;
+  overflow-y: auto;
 }
-.category-name:hover {
-  text-decoration: underline;
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
 }
-.add-category-btn {
-  width: 28px;
-  height: 28px;
+.category-item:last-child {
+  border-bottom: none;
+}
+.category-item-actions {
+  display: flex;
+  gap: 8px;
 }
 .no-category {
   color: #c0c4cc;
