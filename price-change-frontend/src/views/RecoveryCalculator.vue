@@ -712,7 +712,6 @@ const getRowClass = ({ row }: { row: { decline: number } }) => {
 
 .ref-table {
   width: 100%;
-  max-height: 560px;
 
   :deep(.el-table__header-wrapper th) {
     background: #f8fafc;
