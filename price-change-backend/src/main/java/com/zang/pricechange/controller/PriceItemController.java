@@ -42,7 +42,8 @@ public class PriceItemController {
                 principal.getUserId(),
                 request.getName(),
                 request.getCurrentValue(),
-                request.getTargetValue()
+                request.getTargetValue(),
+                request.getCategoryId()
         );
         return Result.success(toResponse(item));
     }
@@ -51,12 +52,13 @@ public class PriceItemController {
      * 查询当前用户的所有涨跌幅记录
      */
     @AuditLog(value = "查询涨跌幅记录列表", operationType = AuditLog.OperationType.QUERY)
-    @Operation(summary = "查询记录列表", description = "获取当前用户的所有涨跌幅记录，支持排序")
+    @Operation(summary = "查询记录列表", description = "获取当前用户的所有涨跌幅记录，支持排序和分类筛选")
     @GetMapping
     public Result<List<PriceItemResponse>> list(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam(defaultValue = "desc") String sortOrder) {
-        List<PriceItem> items = priceItemService.list(principal.getUserId(), sortOrder);
+            @RequestParam(defaultValue = "desc") String sortOrder,
+            @RequestParam(required = false) Long categoryId) {
+        List<PriceItem> items = priceItemService.list(principal.getUserId(), sortOrder, categoryId);
         return Result.success(items.stream().map(this::toResponse).collect(Collectors.toList()));
     }
 
@@ -88,15 +90,19 @@ public class PriceItemController {
                 id,
                 request.getName(),
                 request.getCurrentValue(),
-                request.getTargetValue()
+                request.getTargetValue(),
+                request.getCategoryId()
         );
         return Result.success(toResponse(item));
     }
 
     private PriceItemResponse toResponse(PriceItem item) {
+        String categoryName = priceItemService.getCategoryName(item.getCategoryId());
         return new PriceItemResponse(
                 item.getId(),
-                item.getName(),  // EncryptedStringTypeHandler 已自动解密
+                item.getCategoryId(),
+                categoryName,
+                item.getName(),
                 item.getCurrentValue(),
                 item.getTargetValue(),
                 item.getChangePercent(),

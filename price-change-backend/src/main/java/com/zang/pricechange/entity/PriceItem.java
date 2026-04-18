@@ -29,6 +29,12 @@ public class PriceItem {
     
     @TableField("user_id")
     private Long userId;
+
+    /**
+     * 分类ID（外键关联 category 表）
+     */
+    @TableField("category_id")
+    private Long categoryId;
     
     /**
      * 价格项名称（加密存储）

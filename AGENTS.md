@@ -151,7 +151,7 @@ npx tsc --noEmit
 @AllArgsConstructor
 @TableName("users")
 public class User {
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
     
     @TableField("username")
@@ -167,7 +167,8 @@ public class User {
 
 - 使用 `@TableName` 指定表名
 - 使用 `@TableField` 映射字段名，自动填充字段使用 `fill = FieldFill.INSERT`
-- 主键使用 `@TableId(type = IdType.AUTO)` 自增
+- **主键统一使用 `@TableId(type = IdType.ASSIGN_ID)` 雪花算法生成**，禁止使用 `IdType.AUTO` 自增
+- 数据库表主键列为 `BIGINT`，不使用 `AUTO_INCREMENT`，ID 由应用层雪花算法生成
 - 必须添加 `@NoArgsConstructor` 和 `@AllArgsConstructor` (Lombok)
 - `@Data` 自动生成 getter/setter/toString/equals/hashCode
 
@@ -400,7 +401,7 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
-      id-type: auto
+      id-type: assign_id
 
 server:
   port: 8080

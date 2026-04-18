@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getPriceItems, createPriceItem, deletePriceItem, updatePriceItem, type PriceItem } from '../api/priceItem'
+import {
+  getPriceItems, createPriceItem, deletePriceItem, updatePriceItem,
+  getCategories, createCategory, updateCategory, deleteCategory,
+  type PriceItem, type Category
+} from '../api/priceItem'
 import { useAuthStore } from '../store/auth'
 
 const authStore = useAuthStore()
 
 const items = ref<PriceItem[]>([])
+const categories = ref<Category[]>([])
 const sortOrder = ref('desc')
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -15,13 +20,30 @@ const editingId = ref<number | null>(null)
 const form = ref({
   name: '',
   currentValue: 0,
-  targetValue: 0
+  targetValue: 0,
+  categoryId: null as number | null
 })
+
+// 分类相关
+const activeCategoryId = ref<number | null>(null) // null 表示"全部"
+const categoryDialogVisible = ref(false)
+const categoryForm = ref({ name: '' })
+const isCategoryEdit = ref(false)
+const editingCategoryId = ref<number | null>(null)
+
+const loadCategories = async () => {
+  try {
+    categories.value = await getCategories()
+  } catch {
+    categories.value = []
+  }
+}
 
 const loadItems = async () => {
   loading.value = true
   try {
-    items.value = await getPriceItems(sortOrder.value)
+    const categoryIdParam = activeCategoryId.value ?? undefined
+    items.value = await getPriceItems(sortOrder.value, categoryIdParam)
   } catch (e: any) {
     const errorMsg = e.response?.data?.message || e.message || '加载失败'
     ElMessage.error(errorMsg)
@@ -31,13 +53,16 @@ const loadItems = async () => {
   }
 }
 
+const handleCategoryChange = () => {
+  loadItems()
+}
+
 const handleSort = async (order: string) => {
   sortOrder.value = order
   await loadItems()
 }
 
 const handleAdd = async () => {
-  // 表单验证
   if (!form.value.name || form.value.name.trim().length === 0) {
     ElMessage.warning('请输入名称')
     return
@@ -64,26 +89,25 @@ const handleAdd = async () => {
   }
 
   try {
+    const requestData = {
+      name: form.value.name.trim(),
+      currentValue: form.value.currentValue,
+      targetValue: form.value.targetValue,
+      categoryId: form.value.categoryId
+    }
+
     if (isEdit.value && editingId.value !== null) {
-      await updatePriceItem(editingId.value, {
-        name: form.value.name.trim(),
-        currentValue: form.value.currentValue,
-        targetValue: form.value.targetValue
-      })
+      await updatePriceItem(editingId.value, requestData)
       ElMessage.success('更新成功')
     } else {
-      await createPriceItem({
-        name: form.value.name.trim(),
-        currentValue: form.value.currentValue,
-        targetValue: form.value.targetValue
-      })
+      await createPriceItem(requestData)
       ElMessage.success('添加成功')
     }
     dialogVisible.value = false
-    form.value = { name: '', currentValue: 0, targetValue: 0 }
+    form.value = { name: '', currentValue: 0, targetValue: 0, categoryId: null }
     isEdit.value = false
     editingId.value = null
-    await loadItems()
+    await Promise.all([loadItems(), loadCategories()])
   } catch (e: any) {
     const errorMsg = e.response?.data?.message || e.message || (isEdit.value ? '更新失败' : '添加失败')
     ElMessage.error(errorMsg)
@@ -97,12 +121,13 @@ const openDialog = (row?: PriceItem) => {
     form.value = {
       name: row.name,
       currentValue: row.currentValue,
-      targetValue: row.targetValue
+      targetValue: row.targetValue,
+      categoryId: row.categoryId
     }
   } else {
     isEdit.value = false
     editingId.value = null
-    form.value = { name: '', currentValue: 0, targetValue: 0 }
+    form.value = { name: '', currentValue: 0, targetValue: 0, categoryId: null }
   }
   dialogVisible.value = true
 }
@@ -110,7 +135,7 @@ const openDialog = (row?: PriceItem) => {
 const handleCloseDialog = () => {
   isEdit.value = false
   editingId.value = null
-  form.value = { name: '', currentValue: 0, targetValue: 0 }
+  form.value = { name: '', currentValue: 0, targetValue: 0, categoryId: null }
 }
 
 const handleDelete = async (id: number) => {
@@ -122,10 +147,69 @@ const handleDelete = async (id: number) => {
     })
     await deletePriceItem(id)
     ElMessage.success('删除成功')
-    await loadItems()
+    await Promise.all([loadItems(), loadCategories()])
   } catch (e: any) {
     if (e !== 'cancel') {
       const errorMsg = e.response?.data?.message || e.message || '删除失败'
+      ElMessage.error(errorMsg)
+    }
+  }
+}
+
+// ===== 分类管理 =====
+
+const openCategoryDialog = (cat?: Category) => {
+  if (cat) {
+    isCategoryEdit.value = true
+    editingCategoryId.value = cat.id
+    categoryForm.value = { name: cat.name }
+  } else {
+    isCategoryEdit.value = false
+    editingCategoryId.value = null
+    categoryForm.value = { name: '' }
+  }
+  categoryDialogVisible.value = true
+}
+
+const handleCategorySubmit = async () => {
+  if (!categoryForm.value.name || categoryForm.value.name.trim().length === 0) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+  try {
+    if (isCategoryEdit.value && editingCategoryId.value !== null) {
+      await updateCategory(editingCategoryId.value, { name: categoryForm.value.name.trim() })
+      ElMessage.success('分类更新成功')
+    } else {
+      await createCategory({ name: categoryForm.value.name.trim() })
+      ElMessage.success('分类创建成功')
+    }
+    categoryDialogVisible.value = false
+    categoryForm.value = { name: '' }
+    await loadCategories()
+  } catch (e: any) {
+    const errorMsg = e.response?.data?.message || e.message || '操作失败'
+    ElMessage.error(errorMsg)
+  }
+}
+
+const handleDeleteCategory = async (cat: Category) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除分类"${cat.name}"吗？关联的记录将被移出该分类。`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    await deleteCategory(cat.id)
+    ElMessage.success('分类删除成功')
+    // 如果当前选中的分类被删除，回到全部
+    if (activeCategoryId.value === cat.id) {
+      activeCategoryId.value = null
+    }
+    await Promise.all([loadCategories(), loadItems()])
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      const errorMsg = e.response?.data?.message || e.message || '删除分类失败'
       ElMessage.error(errorMsg)
     }
   }
@@ -148,6 +232,7 @@ const getPercentClass = (val: number) => {
 }
 
 onMounted(() => {
+  loadCategories()
   loadItems()
 })
 </script>
@@ -165,6 +250,33 @@ onMounted(() => {
         </div>
       </el-header>
       <el-main>
+        <!-- 分类 Tab 栏 -->
+        <div class="category-tabs">
+          <el-tag
+            :type="activeCategoryId === null ? 'primary' : 'info'"
+            :effect="activeCategoryId === null ? 'dark' : 'plain'"
+            class="category-tag"
+            @click="activeCategoryId = null; handleCategoryChange()"
+          >
+            全部
+          </el-tag>
+          <el-tag
+            v-for="cat in categories"
+            :key="cat.id"
+            :type="activeCategoryId === cat.id ? 'primary' : 'info'"
+            :effect="activeCategoryId === cat.id ? 'dark' : 'plain'"
+            class="category-tag"
+            closable
+            @click="activeCategoryId = cat.id; handleCategoryChange()"
+            @close="handleDeleteCategory(cat)"
+          >
+            <span class="category-name" @click.stop="openCategoryDialog(cat)">{{ cat.name }}</span>
+          </el-tag>
+          <el-button class="add-category-btn" size="small" circle @click="openCategoryDialog()">
+            <el-icon><span>+</span></el-icon>
+          </el-button>
+        </div>
+
         <div class="toolbar">
           <el-button type="primary" @click="openDialog()">新增</el-button>
           <div class="sort-buttons">
@@ -178,6 +290,12 @@ onMounted(() => {
         </div>
 
         <el-table :data="items" v-loading="loading" style="width: 100%">
+          <el-table-column prop="categoryName" label="分类" width="100">
+            <template #default="{ row }">
+              <el-tag v-if="row.categoryName" size="small" type="info">{{ row.categoryName }}</el-tag>
+              <span v-else class="no-category">-</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="name" label="名称" />
           <el-table-column prop="currentValue" label="当前值">
             <template #default="{ row }">
@@ -215,8 +333,23 @@ onMounted(() => {
       </el-main>
     </el-container>
 
+    <!-- 价格项新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑涨跌幅记录' : '新增涨跌幅记录'" width="400px" @close="handleCloseDialog">
       <el-form :model="form" label-width="80px">
+        <el-form-item label="分类">
+          <el-select
+            v-model="form.categoryId"
+            clearable
+            placeholder="选择分类"
+          >
+            <el-option
+              v-for="cat in categories"
+              :key="cat.id"
+              :label="cat.name"
+              :value="cat.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="名称">
           <el-input v-model="form.name" placeholder="请输入名称" />
         </el-form-item>
@@ -230,6 +363,19 @@ onMounted(() => {
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleAdd">{{ isEdit ? '更新' : '确定' }}</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 分类新增/编辑对话框 -->
+    <el-dialog v-model="categoryDialogVisible" :title="isCategoryEdit ? '编辑分类' : '新增分类'" width="350px">
+      <el-form :model="categoryForm" label-width="80px">
+        <el-form-item label="分类名称">
+          <el-input v-model="categoryForm.name" placeholder="请输入分类名称" maxlength="50" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="categoryDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleCategorySubmit">{{ isCategoryEdit ? '更新' : '确定' }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -257,6 +403,33 @@ onMounted(() => {
 }
 .el-main {
   padding: 20px;
+}
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.category-tag {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.category-tag:hover {
+  opacity: 0.85;
+}
+.category-name {
+  cursor: text;
+}
+.category-name:hover {
+  text-decoration: underline;
+}
+.add-category-btn {
+  width: 28px;
+  height: 28px;
+}
+.no-category {
+  color: #c0c4cc;
 }
 .toolbar {
   display: flex;
