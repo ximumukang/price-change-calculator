@@ -746,7 +746,14 @@ const getRowClass = ({ row }: { row: { decline: number } }) => {
 .cell-val {
   font-size: 15px;
   font-weight: 600;
-  color: #1e293b;
+
+  &.decline-val {
+    color: #10b981;
+  }
+
+  &.gain-val {
+    color: #ef4444;
+  }
 }
 
 .ratio-badge {
